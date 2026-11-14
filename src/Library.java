@@ -47,20 +47,8 @@ public class Library {
         return Collections.unmodifiableList(new ArrayList<>(books));
     }
 
-    public List<User> getUsers() {
-        return Collections.unmodifiableList(new ArrayList<>(users));
-    }
-
-    public List<Loan> getLoans() {
-        return Collections.unmodifiableList(new ArrayList<>(activeLoans));
-    }
-
     public static List<Book> booksByCategory(List<Book> source, String category) {
         return source.stream().filter(book -> Objects.equals(book.getCategory(), category)).collect(Collectors.toList());
-    }
-
-    public static BigDecimal calculateFine(long daysDelayed, BigDecimal dailyFine) {
-        return Loan.calculateFine(daysDelayed, dailyFine);
     }
 
     public static boolean isOverdue(Loan loan, LocalDate referenceDate) {
@@ -102,11 +90,13 @@ public class Library {
     }
 
     public String fineReport(LocalDate referenceDate) {
-        BigDecimal total = overdueLoans(activeLoans, referenceDate).stream()
+        List<Loan> overdue = overdueLoans(activeLoans, referenceDate);
+
+        BigDecimal total = overdue.stream()
                 .map(loan -> Loan.calculateFine(ChronoUnit.DAYS.between(loan.getExpectedReturnDate(), referenceDate), DAILY_FINE))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        return overdueLoans(activeLoans, referenceDate).stream()
+        return overdue.stream()
                 .map(loan -> String.format("%s - %s: R$ %s", loan.getUser().getName(), loan.getBook().getTitle(),
                         Loan.calculateFine(ChronoUnit.DAYS.between(loan.getExpectedReturnDate(), referenceDate), DAILY_FINE)))
                 .reduce((left, right) -> left + System.lineSeparator() + right)
